@@ -125,6 +125,12 @@
   {:name "clojure_eval"
    :description "Evaluate Clojure code on a shared nREPL server.
 
+Port resolution order:
+1. Explicit port parameter
+2. BB_MCP_NREPL_PORT env var
+3. .nrepl-port file in BB_MCP_PROJECT_DIR
+4. Default: 7888
+
 Examples:
 - clojure_eval(code: \"(+ 1 2)\")
 - clojure_eval(code: \"(require '[my.ns])\", port: 7888)"
@@ -132,22 +138,35 @@ Examples:
             :properties {:code {:type "string"
                                 :description "Clojure code to evaluate"}
                          :port {:type "integer"
-                                :description "nREPL port (default from .nrepl-port)"}
+                                :description "nREPL port (auto-discovered if not specified)"}
                          :timeout_ms {:type "integer"
                                       :description "Timeout in ms (default: 30000)"}}
             :required ["code"]}})
 
 (defn find-nrepl-port
-  "Find nREPL port from .nrepl-port file."
+  "Find nREPL port from .nrepl-port file in given directory."
   [dir]
   (let [port-file (str dir "/.nrepl-port")]
     (when (.exists (java.io.File. port-file))
       (parse-long (str/trim (slurp port-file))))))
 
+(defn get-project-dir
+  "Get the target project directory from env or default to cwd."
+  []
+  (or (System/getenv "BB_MCP_PROJECT_DIR") "."))
+
+(defn get-nrepl-port
+  "Get nREPL port from env, .nrepl-port file, or default."
+  []
+  (or (when-let [env-port (System/getenv "BB_MCP_NREPL_PORT")]
+        (parse-long env-port))
+      (find-nrepl-port (get-project-dir))
+      7888))
+
 (defn execute
   "Execute Clojure code via nREPL."
   [{:keys [code port timeout_ms]}]
-  (let [port (or port (find-nrepl-port ".") 7888)]
+  (let [port (or port (get-nrepl-port))]
     (eval-code {:port port
                 :code code
                 :timeout-ms (or timeout_ms 30000)})))
