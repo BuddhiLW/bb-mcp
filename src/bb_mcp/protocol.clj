@@ -5,6 +5,8 @@
             [clojure.string :as str]))
 
 ;; MCP Protocol constants
+;; 2024-11-05 is MCP 1.0 release date - the standard protocol version.
+;; Claude Code client sends 2025-06-18 but should handle backwards compat.
 (def protocol-version "2024-11-05")
 (def server-name "bb-mcp")
 (def server-version "0.1.0")
