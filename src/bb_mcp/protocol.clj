@@ -52,16 +52,26 @@
    MCP uses Content-Length header + JSON body."
   []
   (try
-    (when-let [header-line (read-line)]
-      (when (str/starts-with? header-line "Content-Length:")
-        (let [content-length (parse-long (str/trim (subs header-line 16)))]
-          ;; Read empty line after header
-          (read-line)
-          ;; Read JSON body character by character
-          (let [sb (StringBuilder.)]
-            (dotimes [_ content-length]
-              (.append sb (char (.read *in*))))
-            (json/parse-string (str sb) true)))))
+    (loop []
+      (when-let [line (read-line)]
+        (cond
+          ;; Skip empty lines (between messages)
+          (str/blank? line)
+          (recur)
+
+          ;; Found Content-Length header
+          (str/starts-with? line "Content-Length:")
+          (let [content-length (parse-long (str/trim (subs line 16)))]
+            ;; Read empty line after header
+            (read-line)
+            ;; Read JSON body character by character
+            (let [sb (StringBuilder.)]
+              (dotimes [_ content-length]
+                (.append sb (char (.read *in*))))
+              (json/parse-string (str sb) true)))
+
+          ;; Unexpected line - skip it
+          :else (recur))))
     (catch Exception e
       nil)))
 
