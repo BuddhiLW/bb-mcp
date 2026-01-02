@@ -6,6 +6,7 @@
             [bb-mcp.tools.grep :as grep]
             [bb-mcp.tools.nrepl :as nrepl]
             [bb-mcp.tools.emacs :as emacs]
+            [bb-mcp.nrepl-spawn :as spawn]
             [clojure.string :as str]))
 
 ;; Tool registry - native tools + emacs wrappers
@@ -72,6 +73,8 @@
       (recur))))
 
 (defn -main [& _args]
+  ;; Ensure emacs-mcp nREPL is running (auto-spawn if needed)
+  (spawn/ensure-nrepl!)
   (run-server))
 
 ;; For REPL development
