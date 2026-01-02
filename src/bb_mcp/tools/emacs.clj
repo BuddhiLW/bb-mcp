@@ -3,7 +3,8 @@
 
    These tools provide a lightweight way to interact with Emacs
    through bb-mcp while keeping the heavy JVM work on a shared nREPL."
-  (:require [bb-mcp.tools.emacs.core :as core]))
+  (:require [bb-mcp.tools.emacs.core :as core]
+            [bb-mcp.tools.emacs.buffer :as buffer]))
 
 ;; Import shared helpers from core
 (def ^:private emacs-eval core/emacs-eval)
@@ -1271,89 +1272,68 @@ Use after mcp_memory_query_metadata to fetch specific entries."
 ;; =============================================================================
 
 (def tools
-  [;; Basic Emacs tools
-   {:spec eval-elisp-spec :handler eval-elisp}
-   {:spec emacs-status-spec :handler emacs-status}
-   {:spec list-buffers-spec :handler list-buffers}
-   {:spec current-buffer-spec :handler current-buffer}
-   {:spec get-buffer-content-spec :handler get-buffer-content}
-   {:spec find-file-spec :handler find-file}
-   {:spec mcp-notify-spec :handler mcp-notify}
-   ;; Additional Buffer tools
-   {:spec switch-to-buffer-spec :handler switch-to-buffer}
-   {:spec save-buffer-spec :handler save-buffer}
-   {:spec goto-line-spec :handler goto-line}
-   {:spec insert-text-spec :handler insert-text}
-   {:spec recent-files-spec :handler recent-files}
-   {:spec buffer-info-spec :handler buffer-info}
-   {:spec project-root-spec :handler project-root}
-   {:spec mcp-capabilities-spec :handler mcp-capabilities}
-   ;; Magit integration
-   {:spec magit-status-spec :handler magit-status}
-   {:spec magit-branches-spec :handler magit-branches}
-   {:spec magit-log-spec :handler magit-log}
-   {:spec magit-diff-spec :handler magit-diff}
-   {:spec magit-stage-spec :handler magit-stage}
-   {:spec magit-commit-spec :handler magit-commit}
-   {:spec magit-push-spec :handler magit-push}
-   {:spec magit-pull-spec :handler magit-pull}
-   {:spec magit-fetch-spec :handler magit-fetch}
-   {:spec magit-feature-branches-spec :handler magit-feature-branches}
-   ;; Context
-   {:spec mcp-get-context-spec :handler mcp-get-context}
-   ;; Memory
-   {:spec mcp-memory-query-metadata-spec :handler mcp-memory-query-metadata}
-   {:spec mcp-memory-get-full-spec :handler mcp-memory-get-full}
-   {:spec mcp-memory-add-spec :handler mcp-memory-add}
-   {:spec mcp-memory-search-semantic-spec :handler mcp-memory-search-semantic}
-   {:spec mcp-memory-set-duration-spec :handler mcp-memory-set-duration}
-   {:spec mcp-memory-promote-spec :handler mcp-memory-promote}
-   {:spec mcp-memory-demote-spec :handler mcp-memory-demote}
-   {:spec mcp-memory-cleanup-expired-spec :handler mcp-memory-cleanup-expired}
-   {:spec mcp-memory-expiring-soon-spec :handler mcp-memory-expiring-soon}
-   {:spec mcp-memory-log-access-spec :handler mcp-memory-log-access}
-   {:spec mcp-memory-feedback-spec :handler mcp-memory-feedback}
-   {:spec mcp-memory-check-duplicate-spec :handler mcp-memory-check-duplicate}
-   ;; Kanban
-   {:spec mcp-kanban-status-spec :handler mcp-kanban-status}
-   {:spec mcp-kanban-list-tasks-spec :handler mcp-kanban-list-tasks}
-   {:spec mcp-kanban-create-task-spec :handler mcp-kanban-create-task}
-   {:spec mcp-kanban-move-task-spec :handler mcp-kanban-move-task}
-   {:spec mcp-kanban-update-task-spec :handler mcp-kanban-update-task}
-   {:spec mcp-kanban-roadmap-spec :handler mcp-kanban-roadmap}
-   {:spec mcp-kanban-my-tasks-spec :handler mcp-kanban-my-tasks}
-   {:spec mcp-kanban-sync-spec :handler mcp-kanban-sync}
-   ;; Swarm
-   {:spec swarm-status-spec :handler swarm-status}
-   {:spec swarm-spawn-spec :handler swarm-spawn}
-   {:spec swarm-dispatch-spec :handler swarm-dispatch}
-   {:spec swarm-collect-spec :handler swarm-collect}
-   {:spec swarm-list-presets-spec :handler swarm-list-presets}
-   {:spec swarm-kill-spec :handler swarm-kill}
-   {:spec swarm-broadcast-spec :handler swarm-broadcast}
-   ;; Projectile
-   {:spec projectile-info-spec :handler projectile-info}
-   {:spec projectile-files-spec :handler projectile-files}
-   {:spec projectile-search-spec :handler projectile-search}
-   {:spec projectile-find-file-spec :handler projectile-find-file}
-   {:spec projectile-recent-spec :handler projectile-recent}
-   {:spec projectile-list-projects-spec :handler projectile-list-projects}
-   ;; Org
-   {:spec org-clj-parse-spec :handler org-clj-parse}
-   {:spec org-clj-write-spec :handler org-clj-write}
-   {:spec org-clj-query-spec :handler org-clj-query}
-   {:spec org-kanban-render-spec :handler org-kanban-render}
-   ;; Prompt
-   {:spec prompt-capture-spec :handler prompt-capture}
-   {:spec prompt-list-spec :handler prompt-list}
-   {:spec prompt-search-spec :handler prompt-search}
-   {:spec prompt-stats-spec :handler prompt-stats}
-   ;; CIDER
-   {:spec cider-status-spec :handler cider-status}
-   {:spec cider-eval-silent-spec :handler cider-eval-silent}
-   {:spec cider-eval-explicit-spec :handler cider-eval-explicit}
-   {:spec cider-spawn-session-spec :handler cider-spawn-session}
-   {:spec cider-list-sessions-spec :handler cider-list-sessions}
-   {:spec cider-eval-session-spec :handler cider-eval-session}
-   {:spec cider-kill-session-spec :handler cider-kill-session}
-   {:spec cider-kill-all-sessions-spec :handler cider-kill-all-sessions}])
+  (vec
+   (concat
+    ;; Buffer domain (from buffer.clj)
+    buffer/tools
+    ;; Other domains (inline for now)
+    [{:spec magit-status-spec :handler magit-status}
+     {:spec magit-branches-spec :handler magit-branches}
+     {:spec magit-log-spec :handler magit-log}
+     {:spec magit-diff-spec :handler magit-diff}
+     {:spec magit-stage-spec :handler magit-stage}
+     {:spec magit-commit-spec :handler magit-commit}
+     {:spec magit-push-spec :handler magit-push}
+     {:spec magit-pull-spec :handler magit-pull}
+     {:spec magit-fetch-spec :handler magit-fetch}
+     {:spec magit-feature-branches-spec :handler magit-feature-branches}
+     {:spec mcp-get-context-spec :handler mcp-get-context}
+     {:spec mcp-memory-query-metadata-spec :handler mcp-memory-query-metadata}
+     {:spec mcp-memory-get-full-spec :handler mcp-memory-get-full}
+     {:spec mcp-memory-add-spec :handler mcp-memory-add}
+     {:spec mcp-memory-search-semantic-spec :handler mcp-memory-search-semantic}
+     {:spec mcp-memory-set-duration-spec :handler mcp-memory-set-duration}
+     {:spec mcp-memory-promote-spec :handler mcp-memory-promote}
+     {:spec mcp-memory-demote-spec :handler mcp-memory-demote}
+     {:spec mcp-memory-cleanup-expired-spec :handler mcp-memory-cleanup-expired}
+     {:spec mcp-memory-expiring-soon-spec :handler mcp-memory-expiring-soon}
+     {:spec mcp-memory-log-access-spec :handler mcp-memory-log-access}
+     {:spec mcp-memory-feedback-spec :handler mcp-memory-feedback}
+     {:spec mcp-memory-check-duplicate-spec :handler mcp-memory-check-duplicate}
+     {:spec mcp-kanban-status-spec :handler mcp-kanban-status}
+     {:spec mcp-kanban-list-tasks-spec :handler mcp-kanban-list-tasks}
+     {:spec mcp-kanban-create-task-spec :handler mcp-kanban-create-task}
+     {:spec mcp-kanban-move-task-spec :handler mcp-kanban-move-task}
+     {:spec mcp-kanban-update-task-spec :handler mcp-kanban-update-task}
+     {:spec mcp-kanban-roadmap-spec :handler mcp-kanban-roadmap}
+     {:spec mcp-kanban-my-tasks-spec :handler mcp-kanban-my-tasks}
+     {:spec mcp-kanban-sync-spec :handler mcp-kanban-sync}
+     {:spec swarm-status-spec :handler swarm-status}
+     {:spec swarm-spawn-spec :handler swarm-spawn}
+     {:spec swarm-dispatch-spec :handler swarm-dispatch}
+     {:spec swarm-collect-spec :handler swarm-collect}
+     {:spec swarm-list-presets-spec :handler swarm-list-presets}
+     {:spec swarm-kill-spec :handler swarm-kill}
+     {:spec swarm-broadcast-spec :handler swarm-broadcast}
+     {:spec projectile-info-spec :handler projectile-info}
+     {:spec projectile-files-spec :handler projectile-files}
+     {:spec projectile-search-spec :handler projectile-search}
+     {:spec projectile-find-file-spec :handler projectile-find-file}
+     {:spec projectile-recent-spec :handler projectile-recent}
+     {:spec projectile-list-projects-spec :handler projectile-list-projects}
+     {:spec org-clj-parse-spec :handler org-clj-parse}
+     {:spec org-clj-write-spec :handler org-clj-write}
+     {:spec org-clj-query-spec :handler org-clj-query}
+     {:spec org-kanban-render-spec :handler org-kanban-render}
+     {:spec prompt-capture-spec :handler prompt-capture}
+     {:spec prompt-list-spec :handler prompt-list}
+     {:spec prompt-search-spec :handler prompt-search}
+     {:spec prompt-stats-spec :handler prompt-stats}
+     {:spec cider-status-spec :handler cider-status}
+     {:spec cider-eval-silent-spec :handler cider-eval-silent}
+     {:spec cider-eval-explicit-spec :handler cider-eval-explicit}
+     {:spec cider-spawn-session-spec :handler cider-spawn-session}
+     {:spec cider-list-sessions-spec :handler cider-list-sessions}
+     {:spec cider-eval-session-spec :handler cider-eval-session}
+     {:spec cider-kill-session-spec :handler cider-kill-session}
+     {:spec cider-kill-all-sessions-spec :handler cider-kill-all-sessions}])))
