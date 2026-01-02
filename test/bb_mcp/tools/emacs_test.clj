@@ -10,7 +10,7 @@
 
 (deftest tool-count-regression-test
   (testing "Total tool count must remain stable"
-    (is (= 75 (count emacs/tools))
+    (is (= 79 (count emacs/tools))
         "Tool count changed - this breaks backwards compatibility")))
 
 (deftest all-tools-have-required-structure-test
@@ -65,7 +65,8 @@
   {:buffer #{"eval_elisp" "emacs_status" "list_buffers" "current_buffer"
              "get_buffer_content" "find_file" "mcp_notify" "switch_to_buffer"
              "save_buffer" "goto_line" "insert_text" "recent_files" "buffer_info"
-             "project_root" "mcp_capabilities"}
+             "project_root" "mcp_capabilities" "mcp_watch_buffer"
+             "mcp_list_special_buffers" "mcp_list_workflows" "mcp_run_workflow"}
    :magit #{"magit_status" "magit_branches" "magit_log" "magit_diff"
             "magit_stage" "magit_commit" "magit_push" "magit_pull"
             "magit_fetch" "magit_feature_branches"}
@@ -98,7 +99,7 @@
 
 (deftest category-tool-counts-test
   (testing "Tool counts by category"
-    (is (= 15 (count (:buffer expected-tool-categories))) "Buffer tools")
+    (is (= 19 (count (:buffer expected-tool-categories))) "Buffer tools")
     (is (= 10 (count (:magit expected-tool-categories))) "Magit tools")
     (is (= 12 (count (:memory expected-tool-categories))) "Memory tools")
     (is (= 8 (count (:kanban expected-tool-categories))) "Kanban tools")
@@ -108,8 +109,8 @@
     (is (= 4 (count (:prompt expected-tool-categories))) "Prompt tools")
     (is (= 8 (count (:cider expected-tool-categories))) "CIDER tools")
     (is (= 1 (count (:context expected-tool-categories))) "Context tools")
-    ;; Total: 15+10+12+8+7+6+4+4+8+1 = 75
-    (is (= 75 (reduce + (map count (vals expected-tool-categories)))))))
+    ;; Total: 19+10+12+8+7+6+4+4+8+1 = 79
+    (is (= 79 (reduce + (map count (vals expected-tool-categories)))))))
 
 ;; =============================================================================
 ;; Unit Tests - Handler Contract

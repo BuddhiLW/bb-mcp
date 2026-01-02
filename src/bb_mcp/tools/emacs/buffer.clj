@@ -295,6 +295,101 @@ Examples:
 ;; Exported tools vector
 ;; =============================================================================
 
+;; =============================================================================
+;; Tool: mcp_watch_buffer
+;; =============================================================================
+
+(def mcp-watch-buffer-spec
+  {:name "mcp_watch_buffer"
+   :description "Get recent content from a buffer for monitoring. Useful for watching *Messages*, *Warnings*, *Compile-Log*, etc. Returns the last N lines."
+   :schema {:type "object"
+            :properties {:buffer_name {:type "string"
+                                       :description "Name of the buffer to watch (e.g., \"*Messages*\")"}
+                         :lines {:type "integer"
+                                 :description "Number of lines to retrieve from end (default: 50)"}
+                         :port {:type "integer"
+                                :description "nREPL port (default: 7910)"}}
+            :required ["buffer_name"]}})
+
+(defn mcp-watch-buffer
+  "Get recent content from a buffer for monitoring."
+  [{:keys [buffer_name lines port]}]
+  (let [num-lines (or lines 50)
+        code (format "(with-current-buffer %s
+                       (save-excursion
+                         (goto-char (point-max))
+                         (forward-line (- %d))
+                         (buffer-substring-no-properties (point) (point-max))))"
+                     (pr-str buffer_name)
+                     num-lines)]
+    (emacs-eval (wrap-emacs-call code) :port port)))
+
+;; =============================================================================
+;; Tool: mcp_list_special_buffers
+;; =============================================================================
+
+(def mcp-list-special-buffers-spec
+  {:name "mcp_list_special_buffers"
+   :description "List all special buffers (those starting with *) useful for monitoring. Returns buffer names like *Messages*, *scratch*, *Warnings*, etc."
+   :schema {:type "object"
+            :properties {:port {:type "integer"
+                                :description "nREPL port (default: 7910)"}}
+            :required []}})
+
+(defn mcp-list-special-buffers
+  "List special buffers useful for monitoring."
+  [{:keys [port]}]
+  (let [code "(mapcar #'buffer-name
+               (seq-filter
+                 (lambda (buf)
+                   (string-match-p \"^\\\\*\" (buffer-name buf)))
+                 (buffer-list)))"]
+    (emacs-eval (wrap-emacs-call code) :port port)))
+
+;; =============================================================================
+;; Tool: mcp_list_workflows
+;; =============================================================================
+
+(def mcp-list-workflows-spec
+  {:name "mcp_list_workflows"
+   :description "List available user-defined workflows. Requires emacs-mcp.el."
+   :schema {:type "object"
+            :properties {:port {:type "integer"
+                                :description "nREPL port (default: 7910)"}}
+            :required []}})
+
+(defn mcp-list-workflows
+  "List available workflows."
+  [{:keys [port]}]
+  (let [code "(do (require '[emacs-mcp.tools.buffer :as buffer])
+                  (buffer/handle-mcp-list-workflows {}))"]
+    (emacs-eval code :port port :timeout_ms 15000)))
+
+;; =============================================================================
+;; Tool: mcp_run_workflow
+;; =============================================================================
+
+(def mcp-run-workflow-spec
+  {:name "mcp_run_workflow"
+   :description "Run a user-defined workflow by name. Workflows can automate multi-step tasks. Requires emacs-mcp.el."
+   :schema {:type "object"
+            :properties {:name {:type "string"
+                                :description "Name of the workflow to run"}
+                         :args {:type "object"
+                                :description "Optional arguments to pass to the workflow"}
+                         :port {:type "integer"
+                                :description "nREPL port (default: 7910)"}}
+            :required ["name"]}})
+
+(defn mcp-run-workflow
+  "Run a user-defined workflow."
+  [{:keys [name args port]}]
+  (let [code (format "(do (require '[emacs-mcp.tools.buffer :as buffer])
+                          (buffer/handle-mcp-run-workflow {:name %s :args %s}))"
+                     (pr-str name)
+                     (pr-str args))]
+    (emacs-eval code :port port :timeout_ms 30000)))
+
 (def tools
   [{:spec eval-elisp-spec :handler eval-elisp}
    {:spec emacs-status-spec :handler emacs-status}
@@ -310,4 +405,8 @@ Examples:
    {:spec recent-files-spec :handler recent-files}
    {:spec buffer-info-spec :handler buffer-info}
    {:spec project-root-spec :handler project-root}
-   {:spec mcp-capabilities-spec :handler mcp-capabilities}])
+   {:spec mcp-capabilities-spec :handler mcp-capabilities}
+   {:spec mcp-watch-buffer-spec :handler mcp-watch-buffer}
+   {:spec mcp-list-special-buffers-spec :handler mcp-list-special-buffers}
+   {:spec mcp-list-workflows-spec :handler mcp-list-workflows}
+   {:spec mcp-run-workflow-spec :handler mcp-run-workflow}])
