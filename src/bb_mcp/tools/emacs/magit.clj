@@ -15,15 +15,19 @@
   {:name "magit_status"
    :description "Get comprehensive git status via Magit.
 
-Returns branch, staged/unstaged/untracked files, ahead/behind counts."
+Returns branch, staged/unstaged/untracked files, ahead/behind counts.
+IMPORTANT: Pass your working directory to target your project."
    :schema {:type "object"
-            :properties {:port {:type "integer"
+            :properties {:directory {:type "string"
+                                     :description "Repository directory. IMPORTANT: Pass your current working directory here."}
+                         :port {:type "integer"
                                 :description "nREPL port (default: 7910)"}}
             :required []}})
 
-(defn magit-status [{:keys [port]}]
-  (let [code "(do (require '[emacs-mcp.tools :as tools])
-                  (tools/handle-magit-status {}))"]
+(defn magit-status [{:keys [directory port]}]
+  (let [code (format "(do (require '[emacs-mcp.tools.magit :as m])
+                         (m/handle-magit-status {:directory %s}))"
+                     (if directory (pr-str directory) "nil"))]
     (emacs-eval code :port port :timeout_ms 15000)))
 
 ;; =============================================================================
