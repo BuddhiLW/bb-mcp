@@ -257,6 +257,29 @@ Returns id, type, preview, tags, created - 10x fewer tokens than full query."
     (emacs-eval code :port port :timeout_ms 15000)))
 
 ;; =============================================================================
+;; Tool: mcp_memory_get_full
+;; =============================================================================
+
+(def mcp-memory-get-full-spec
+  {:name "mcp_memory_get_full"
+   :description "Get full content of a memory entry by ID.
+Use after mcp_memory_query_metadata to fetch specific entries."
+   :schema {:type "object"
+            :properties {:id {:type "string"
+                              :description "ID of the memory entry to retrieve"}
+                         :port {:type "integer"
+                                :description "nREPL port (default: 7910)"}}
+            :required ["id"]}})
+
+(defn mcp-memory-get-full
+  "Get full memory entry by ID via emacs-mcp."
+  [{:keys [id port]}]
+  (let [code (format "(do (require '[emacs-mcp.tools :as tools])
+                         (tools/handle-mcp-memory-get-full {:id %s}))"
+                     (pr-str id))]
+    (emacs-eval code :port port :timeout_ms 15000)))
+
+;; =============================================================================
 ;; Tool: mcp_memory_add
 ;; =============================================================================
 
@@ -325,6 +348,7 @@ Returns id, type, preview, tags, created - 10x fewer tokens than full query."
    ;; Context & Memory
    {:spec mcp-get-context-spec :handler mcp-get-context}
    {:spec mcp-memory-query-metadata-spec :handler mcp-memory-query-metadata}
+   {:spec mcp-memory-get-full-spec :handler mcp-memory-get-full}
    {:spec mcp-memory-add-spec :handler mcp-memory-add}
    ;; Kanban
    {:spec mcp-kanban-status-spec :handler mcp-kanban-status}
