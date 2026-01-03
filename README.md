@@ -59,13 +59,13 @@ When running swarm agents (multiple Claudes working in parallel), each agent nee
 
 - [Babashka](https://babashka.org/) v1.3+
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (for grep tool)
-- [emacs-mcp](https://github.com/your-user/emacs-mcp) running with nREPL on port 7910
+- [emacs-mcp](https://github.com/BuddhiLW/emacs-mcp) running with nREPL on port 7910
 
 ## Installation
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-user/bb-mcp.git
+git clone https://github.com/BuddhiLW/bb-mcp.git
 cd bb-mcp
 
 # Add to Claude Code MCP config
