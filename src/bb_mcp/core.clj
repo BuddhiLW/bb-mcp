@@ -9,27 +9,28 @@
             [bb-mcp.nrepl-spawn :as spawn]
             [clojure.string :as str]))
 
-;; Tool registry - native tools + emacs wrappers
-(def tools
-  (concat
-   ;; Native bb-mcp tools (no JVM needed)
-   [{:spec bash/tool-spec
-     :handler (fn [args] (bash/format-result (bash/execute args)))}
-    {:spec file/read-file-spec
-     :handler file/read-file}
-    {:spec file/write-file-spec
-     :handler file/write-file}
-    {:spec file/glob-spec
-     :handler file/glob-files}
-    {:spec grep/tool-spec
-     :handler grep/execute}
-    {:spec nrepl/tool-spec
-     :handler nrepl/execute}]
-   ;; Emacs tools (delegate to shared nREPL with emacs-mcp)
-   emacs/tools))
+;; Native bb-mcp tools (no JVM needed)
+(def ^:private native-tools
+  [{:spec bash/tool-spec
+    :handler (fn [args] (bash/format-result (bash/execute args)))}
+   {:spec file/read-file-spec
+    :handler file/read-file}
+   {:spec file/write-file-spec
+    :handler file/write-file}
+   {:spec file/glob-spec
+    :handler file/glob-files}
+   {:spec grep/tool-spec
+    :handler grep/execute}
+   {:spec nrepl/tool-spec
+    :handler nrepl/execute}])
+
+(defn get-tools
+  "Get all registered tools: native + emacs (dynamic or static fallback)."
+  []
+  (concat native-tools (emacs/get-tools)))
 
 (defn find-tool [name]
-  (first (filter #(= name (get-in % [:spec :name])) tools)))
+  (first (filter #(= name (get-in % [:spec :name])) (get-tools))))
 
 ;; Message handlers
 (defmulti handle-method :method)
@@ -41,7 +42,7 @@
   nil) ;; Notification, no response
 
 (defmethod handle-method "tools/list" [{:keys [id]}]
-  (proto/tools-list-response id (map :spec tools)))
+  (proto/tools-list-response id (map :spec (get-tools))))
 
 (defmethod handle-method "tools/call" [{:keys [id params]}]
   (let [{:keys [name arguments]} params]
@@ -75,6 +76,8 @@
 (defn -main [& _args]
   ;; Ensure emacs-mcp nREPL is running (auto-spawn if needed)
   (spawn/ensure-nrepl!)
+  ;; Load tools dynamically from emacs-mcp (falls back to static on failure)
+  (emacs/init!)
   (run-server))
 
 ;; For REPL development

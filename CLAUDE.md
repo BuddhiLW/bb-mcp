@@ -4,7 +4,9 @@ This file provides context for Claude Code sessions working on bb-mcp.
 
 ## Project Overview
 
-bb-mcp is a lightweight MCP server written in Babashka (Clojure) that bridges Claude Code to Emacs via nREPL. It connects to emacs-mcp on port 7910 and provides 89 tools: 6 native + 83 Emacs tools.
+bb-mcp is a lightweight MCP server written in Babashka (Clojure) that bridges Claude Code to Emacs via nREPL. It's a **multiplexer** - multiple bb-mcp instances share ONE emacs-mcp JVM, reducing memory from ~500MB/instance to ~50MB/instance.
+
+**Tool count**: 6 native + 108 dynamic (from emacs-mcp) = 114 tools
 
 ## Key Files
 
@@ -23,22 +25,11 @@ bb-mcp is a lightweight MCP server written in Babashka (Clojure) that bridges Cl
 | `src/bb_mcp/tools/grep.clj` | Ripgrep wrapper |
 | `src/bb_mcp/tools/nrepl.clj` | nREPL client with bencode (byte-based) |
 
-### Emacs Tool Domains
-| File | Domain |
-|------|--------|
-| `tools/emacs.clj` | Aggregator - combines all domain modules |
-| `tools/emacs/core.clj` | Shared helpers (emacs-eval, wrap-emacs-call) |
-| `tools/emacs/buffer.clj` | Buffer ops, elisp eval (19 tools) |
-| `tools/emacs/magit.clj` | Git via Magit (10 tools) |
-| `tools/emacs/memory.clj` | Project memory CRUD (12 tools) |
-| `tools/emacs/swarm.clj` | Swarm agent orchestration (11 tools) |
-| `tools/emacs/kanban.clj` | Kanban management (8 tools) |
-| `tools/emacs/cider.clj` | CIDER REPL integration (8 tools) |
-| `tools/emacs/projectile.clj` | Project navigation (6 tools) |
-| `tools/emacs/org.clj` | Org-mode operations (4 tools) |
-| `tools/emacs/prompt.clj` | Prompt capture/search (4 tools) |
-| `tools/emacs/context.clj` | Full context aggregation (1 tool) |
-| `tools/emacs/dynamic.clj` | Dynamic tool loading from emacs-mcp |
+### Dynamic Tool Loading
+| File | Purpose |
+|------|---------|
+| `tools/emacs.clj` | Facade for dynamic tools, exposes `init!` and `get-tools` |
+| `tools/emacs/dynamic.clj` | Fetches tools from emacs-mcp via nREPL at startup |
 
 ## Common Commands
 
@@ -55,65 +46,65 @@ bb -m bb-mcp.core
 
 ## Architecture Notes
 
-1. **Tool Registration**: Tools are registered in `core.clj` by concatenating native tools + `emacs/tools`
-2. **Emacs Tool Pattern**: Each domain module exports a `tools` vector with `{:spec ... :handler ...}` maps
-3. **nREPL Delegation**: Emacs tools call `emacs-eval` which sends code to port 7910 via bencode
-4. **Bencode**: Uses byte-based encoding for proper UTF-8 (not character-based)
-5. **Dynamic Loading**: Can fetch tool specs from emacs-mcp at startup via `dynamic.clj`
+1. **Multiplexer Pattern**: Many bb-mcp instances (lightweight) share one emacs-mcp JVM (heavyweight)
+2. **Dynamic Loading**: At startup, `emacs/init!` queries emacs-mcp for all tools via nREPL
+3. **Forwarding Handlers**: Each dynamic tool gets a handler that forwards calls to emacs-mcp
+4. **No Static Tools**: All Emacs tools come from emacs-mcp - add tools there, not here
+5. **Bencode**: Uses byte-based encoding for proper UTF-8 (not character-based)
 
 ## Adding Tools
 
-1. Create spec with `:name`, `:description`, `:schema`
-2. Create handler function taking args map
-3. Add `{:spec ... :handler ...}` to domain module's `tools` vector
-4. If new domain, require it in `tools/emacs.clj` and concat to `static-tools`
+**Native tools** (run in Babashka):
+1. Add to `src/bb_mcp/tools/` (bash, file, grep, nrepl)
+2. Register in `core.clj` native-tools vector
+
+**Emacs tools**: Add to emacs-mcp - bb-mcp picks them up automatically via dynamic loading.
 
 ## Testing
 
 Tests are in `test/bb_mcp/`. Run with `bb test`.
 
+Unit tests work without emacs-mcp. Integration tests skip gracefully if emacs-mcp is unavailable.
+
 ---
 
 # Session Log
 
-## Session: [DATE]
+## Session: 2026-01-03
 
 ### Context
-- **Goal**: [Brief description of what you're working on]
-- **Branch**: [Current git branch if applicable]
+- **Goal**: Achieve tool parity with emacs-mcp, remove static tool maintenance burden
 
 ### Progress
-- [ ] Task 1
-- [ ] Task 2
+- [x] Enable dynamic tool loading at startup (89 → 114 tools)
+- [x] Remove all static tool modules (buffer, magit, memory, etc.)
+- [x] Simplify emacs.clj to dynamic-only
+- [x] Update tests to integration-style
+- [x] Update README with multiplexer architecture docs
 
 ### Notes
-[Any observations, decisions, or things to remember]
+- Static tools were causing maintenance burden (83 static vs 108 dynamic = 25 tool drift)
+- Now bb-mcp has automatic parity with emacs-mcp
 
 ### Files Modified
-- `path/to/file.clj` - [what changed]
+- `src/bb_mcp/core.clj` - Use `get-tools` function, call `emacs/init!` at startup
+- `src/bb_mcp/tools/emacs.clj` - Simplified to dynamic-only facade
+- `src/bb_mcp/tools/emacs/dynamic.clj` - Unchanged (already worked)
+- Deleted: `tools/emacs/{buffer,magit,memory,kanban,swarm,projectile,org,prompt,cider,context,core}.clj`
+- `test/bb_mcp/tools/dynamic_test.clj` - Consolidated integration tests
+- `README.md` - Multiplexer architecture, updated tool counts
 
 ---
 
 ## Previous Sessions
 
 ### Session: 2026-01-02 (Evening)
-- Created comprehensive documentation using swarm agents:
-  - README.md: Architecture, installation, tool reference (89 tools)
-  - CLAUDE.md: AI assistant context and session log template
-  - SUMMARY.md: Brief platform overview and quick start
-- Refactored test suite to SRP structure using swarm agents:
-  - Split monolithic `emacs_test.clj` into 4 focused test files
-  - `regression_test.clj`: Backwards compatibility (tool count)
-  - `structure_test.clj`: Tool structure validation
-  - `categories_test.clj`: Category verification
-  - `smoke_test.clj`: Critical tools existence
-- Updated `test_runner.clj` to run all new namespaces
+- Created comprehensive documentation using swarm agents
+- Refactored test suite to SRP structure
 - All 14 tests pass with 946 assertions
-- Used human-in-the-loop swarm mode for approval workflow
 
 ### Session: 2026-01-02 (Earlier)
 - Refactored emacs tools into DDD bounded context modules
 - Fixed bencode to use byte-based I/O for UTF-8
 - Added dynamic tool loading from emacs-mcp
 - Fixed magit_status directory parameter handling
-- Aligned swarm_collect timeout with emacs-mcp polling

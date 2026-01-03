@@ -1,10 +1,11 @@
 (ns bb-mcp.tools.dynamic-test
   "Tests for dynamic tool loading from emacs-mcp."
   (:require [clojure.test :refer :all]
+            [bb-mcp.tools.emacs :as emacs]
             [bb-mcp.tools.emacs.dynamic :as dynamic]))
 
 ;; =============================================================================
-;; Unit Tests - Transform Functions
+;; Unit Tests - Transform Functions (no emacs-mcp required)
 ;; =============================================================================
 
 (deftest transform-tool-test
@@ -37,7 +38,7 @@
           "Missing schema should get default empty schema"))))
 
 ;; =============================================================================
-;; Unit Tests - Cache Functions
+;; Unit Tests - Cache Functions (no emacs-mcp required)
 ;; =============================================================================
 
 (deftest cache-lifecycle-test
@@ -52,7 +53,7 @@
     (is (nil? (dynamic/get-tools)) "Cache should still be nil after clear")))
 
 ;; =============================================================================
-;; Unit Tests - Forwarding Handler
+;; Unit Tests - Forwarding Handler (no emacs-mcp required)
 ;; =============================================================================
 
 (deftest make-forwarding-handler-test
@@ -61,10 +62,56 @@
       (is (fn? handler) "Should return a function"))))
 
 ;; =============================================================================
-;; Integration Tests - Tools Vector
+;; Integration Tests - Dynamic Loading (requires emacs-mcp on port 7910)
 ;; =============================================================================
 
-(deftest static-tools-vector-test
-  (testing "Static tools vector is empty"
-    (is (= [] dynamic/tools)
-        "dynamic/tools should be empty vector (actual tools are cached)")))
+(defn emacs-mcp-available?
+  "Check if emacs-mcp nREPL is available."
+  []
+  (try
+    (dynamic/clear-cache!)
+    (emacs/init!)
+    (dynamic/tools-loaded?)
+    (catch Exception _ false)))
+
+(deftest dynamic-loading-integration-test
+  (when (emacs-mcp-available?)
+    (testing "Dynamic tool loading from emacs-mcp"
+      (let [tools (emacs/get-tools)]
+        (is (> (count tools) 50)
+            "Should load many tools from emacs-mcp")
+
+        (testing "All tools have required structure"
+          (doseq [tool tools]
+            (is (map? tool) "Tool must be a map")
+            (is (contains? tool :spec) "Missing :spec")
+            (is (contains? tool :handler) "Missing :handler")
+            (is (fn? (:handler tool)) "Handler must be function")))
+
+        (testing "All specs have required keys"
+          (doseq [{:keys [spec]} tools]
+            (is (string? (:name spec)) "Missing :name")
+            (is (string? (:description spec)) "Missing :description")
+            (is (map? (:schema spec)) "Missing :schema")))
+
+        (testing "No duplicate tool names"
+          (let [names (map #(get-in % [:spec :name]) tools)
+                freq (frequencies names)
+                dups (filter #(> (val %) 1) freq)]
+            (is (empty? dups)
+                (str "Duplicate tools: " (keys dups)))))
+
+        (testing "Critical tools present"
+          (let [names (set (map #(get-in % [:spec :name]) tools))
+                critical ["emacs_status" "eval_elisp" "magit_status"
+                          "mcp_get_context" "mcp_kanban_status"
+                          "swarm_status"]]
+            (doseq [tool critical]
+              (is (contains? names tool)
+                  (str "Critical tool missing: " tool)))))))))
+
+(deftest empty-tools-when-not-initialized-test
+  (testing "get-tools returns empty when not initialized"
+    (dynamic/clear-cache!)
+    (is (= [] (emacs/get-tools))
+        "Should return empty vector when cache is nil")))
