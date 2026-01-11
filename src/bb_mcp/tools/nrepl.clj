@@ -209,7 +209,7 @@ Port resolution order:
 1. Explicit port parameter
 2. BB_MCP_NREPL_PORT env var
 3. .nrepl-port file in BB_MCP_PROJECT_DIR
-4. Default: 7910 (emacs-mcp nREPL)
+4. Default: 7910 (hive-mcp nREPL)
 
 Examples:
 - clojure_eval(code: \"(+ 1 2)\")
@@ -237,7 +237,7 @@ Examples:
 
 (defn get-nrepl-port
   "Get nREPL port from env, .nrepl-port file, or default.
-   Default is 7910 for emacs-mcp nREPL."
+   Default is 7910 for hive-mcp nREPL."
   []
   (or (when-let [env-port (System/getenv "BB_MCP_NREPL_PORT")]
         (parse-long env-port))

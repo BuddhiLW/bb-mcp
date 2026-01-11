@@ -1,13 +1,13 @@
 (ns bb-mcp.tools.emacs
-  "Emacs tools loaded dynamically from emacs-mcp via nREPL.
+  "Emacs tools loaded dynamically from hive-mcp via nREPL.
 
-   At startup, queries emacs-mcp for all available tools and creates
+   At startup, queries hive-mcp for all available tools and creates
    forwarding handlers. This eliminates manual tool maintenance -
-   bb-mcp automatically has parity with emacs-mcp."
+   bb-mcp automatically has parity with hive-mcp."
   (:require [bb-mcp.tools.emacs.dynamic :as dynamic]))
 
 (defn init!
-  "Initialize emacs tools by loading them dynamically from emacs-mcp.
+  "Initialize emacs tools by loading them dynamically from hive-mcp.
 
    Options:
      :port       - nREPL port (default: 7910)
@@ -18,7 +18,7 @@
     (dynamic/load-dynamic-tools! :port port :timeout-ms timeout-ms)))
 
 (defn get-tools
-  "Get all emacs-mcp tools. Returns empty vector if not loaded."
+  "Get all hive-mcp tools. Returns empty vector if not loaded."
   []
   (or (dynamic/get-tools) []))
 

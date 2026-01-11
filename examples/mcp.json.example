@@ -10,9 +10,9 @@
       }
     },
 
-    "bb-mcp-emacs-mcp": {
+    "bb-mcp-hive-mcp": {
       "command": "/home/lages/PP/bb-mcp/start-bb-mcp.sh",
-      "args": ["/home/lages/dotfiles/gitthings/emacs-mcp"],
+      "args": ["/home/lages/dotfiles/gitthings/hive-mcp"],
       "env": {
         "BB_MCP_NREPL_PORT": "7910"
       }
@@ -41,8 +41,8 @@
       }
     },
 
-    "emacs-mcp": {
-      "command": "/home/lages/dotfiles/gitthings/emacs-mcp/start-mcp.sh",
+    "hive-mcp": {
+      "command": "/home/lages/dotfiles/gitthings/hive-mcp/start-mcp.sh",
       "args": []
     }
   }

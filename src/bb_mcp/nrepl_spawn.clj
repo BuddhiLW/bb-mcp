@@ -1,14 +1,14 @@
 (ns bb-mcp.nrepl-spawn
-  "Connection management for emacs-mcp multiplex pattern.
+  "Connection management for hive-mcp multiplex pattern.
 
    bb-mcp is a lightweight babashka wrapper that attaches to the heavyweight
-   emacs-mcp JVM via nREPL. This enables using emacs-mcp's tools from any
+   hive-mcp JVM via nREPL. This enables using hive-mcp's tools from any
    project without running a full JVM per project.
 
    Uses state detection instead of time-based heuristics:
    - :ready       → port listening, connect immediately
    - :starting    → process exists but port not ready, wait
-   - :not-running → no process, spawn emacs-mcp
+   - :not-running → no process, spawn hive-mcp
 
    Architecture (SOLID + CLARITY):
    - Probe Layer: Raw I/O (socket, pgrep)
@@ -24,10 +24,10 @@
 
 (def default-port 7910)
 
-(def emacs-mcp-dir
-  "Directory containing emacs-mcp project."
-  (or (System/getenv "EMACS_MCP_DIR")
-      (str (System/getenv "HOME") "/dotfiles/gitthings/emacs-mcp")))
+(def hive-mcp-dir
+  "Directory containing hive-mcp (or hive-mcp) project."
+  (or (System/getenv "HIVE_MCP_DIR")
+      (str (System/getenv "HOME") "/hive-mcp")))
 
 ;;; ============================================================
 ;;; Probe Layer - Raw I/O operations
@@ -36,7 +36,7 @@
 (def lock-file
   "Lock file created by start-mcp.sh to signal 'I'm starting'.
    Format: PID:TIMESTAMP"
-  (str (System/getenv "HOME") "/.config/emacs-mcp/starting.lock"))
+  (str (System/getenv "HOME") "/.config/hive-mcp/starting.lock"))
 
 (defn port-listening?
   "Probe if port is accepting connections.
@@ -66,13 +66,13 @@
       {:starting? false :evidence "no lock file"})))
 
 (defn process-running?
-  "Probe if emacs-mcp JVM is running.
-   Uses pgrep to find Java process with emacs-mcp in classpath.
+  "Probe if hive-mcp JVM is running.
+   Uses pgrep to find Java process with hive-mcp in classpath.
    Returns {:running? bool :evidence string}"
   []
   (try
     (let [result (p/shell {:out :string :err :string :continue true}
-                          "pgrep" "-f" "emacs-mcp.*clojure")]
+                          "pgrep" "-f" "hive-mcp.*clojure")]
       {:running? (zero? (:exit result))
        :evidence (if (zero? (:exit result))
                    (str "pid=" (clojure.string/trim (:out result)))
@@ -104,7 +104,7 @@
     :else                   :not-running))
 
 (defn detect-state
-  "Detect emacs-mcp connection state.
+  "Detect hive-mcp connection state.
    Combines probes into classified state with evidence.
    Returns {:status keyword :port int :evidence map}"
   [port]
@@ -140,15 +140,15 @@
                (min 2000 (* delay-ms 2)))))))
 
 (def config-dir
-  "Configuration directory for emacs-mcp."
-  (str (System/getenv "HOME") "/.config/emacs-mcp"))
+  "Configuration directory for hive-mcp."
+  (str (System/getenv "HOME") "/.config/hive-mcp"))
 
-(defn spawn-emacs-mcp!
-  "Spawn emacs-mcp server process.
+(defn spawn-hive-mcp!
+  "Spawn hive-mcp server process.
    Uses start-mcp.sh if available, falls back to clojure -X:mcp.
-   Logs to ~/.config/emacs-mcp/server.log"
+   Logs to ~/.config/hive-mcp/server.log"
   []
-  (let [script (str emacs-mcp-dir "/start-mcp.sh")
+  (let [script (str hive-mcp-dir "/start-mcp.sh")
         log-file (io/file (str config-dir "/server.log"))]
     ;; Ensure config dir exists
     (.mkdirs (io/file config-dir))
@@ -157,11 +157,11 @@
           (str "=== bb-mcp spawning at " (java.time.Instant/now) " ===\n")
           :append true)
     (if (.exists (io/file script))
-      (p/process {:dir emacs-mcp-dir
+      (p/process {:dir hive-mcp-dir
                   :out :append :out-file log-file
                   :err :append :err-file log-file}
                  script)
-      (p/process {:dir emacs-mcp-dir
+      (p/process {:dir hive-mcp-dir
                   :out :append :out-file log-file
                   :err :append :err-file log-file}
                  "clojure" "-X:mcp"))))
@@ -176,7 +176,7 @@
     (apply println args)))
 
 (defn ensure-nrepl!
-  "Ensure emacs-mcp nREPL is available. Returns true on success.
+  "Ensure hive-mcp nREPL is available. Returns true on success.
 
    State-based decision logic:
    - :ready       → connect immediately (0 latency)
@@ -193,23 +193,23 @@
      (case status
        :ready
        (do
-         (log-stderr "bb-mcp: connected to emacs-mcp on port" port)
+         (log-stderr "bb-mcp: connected to hive-mcp on port" port)
          true)
 
        :starting
        (do
-         (log-stderr "bb-mcp: emacs-mcp starting, waiting...")
+         (log-stderr "bb-mcp: hive-mcp starting, waiting...")
          (if (wait-with-backoff port 30)
            (do (log-stderr "bb-mcp: connected") true)
            (do (log-stderr "bb-mcp: timeout waiting for startup") false)))
 
        :not-running
        (do
-         (log-stderr "bb-mcp: spawning emacs-mcp...")
-         (spawn-emacs-mcp!)
+         (log-stderr "bb-mcp: spawning hive-mcp...")
+         (spawn-hive-mcp!)
          (if (wait-with-backoff port 30)
-           (do (log-stderr "bb-mcp: emacs-mcp ready on port" port) true)
-           (do (log-stderr "bb-mcp: failed to start emacs-mcp") false)))))))
+           (do (log-stderr "bb-mcp: hive-mcp ready on port" port) true)
+           (do (log-stderr "bb-mcp: failed to start hive-mcp") false)))))))
 
 ;; Backwards compatibility alias
 (def ensure-connection! ensure-nrepl!)

@@ -74,9 +74,9 @@
       (recur))))
 
 (defn -main [& _args]
-  ;; Ensure emacs-mcp nREPL is running (auto-spawn if needed)
+  ;; Ensure hive-mcp nREPL is running (auto-spawn if needed)
   (spawn/ensure-nrepl!)
-  ;; Load tools dynamically from emacs-mcp (falls back to static on failure)
+  ;; Load tools dynamically from hive-mcp (falls back to static on failure)
   (emacs/init!)
   (run-server))
 

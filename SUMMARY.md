@@ -7,19 +7,19 @@ bb-mcp is a **lightweight MCP server** that connects Claude Code to Emacs. Writt
 ## How It Works
 
 ```
-Claude Code  ─── MCP/stdio ───▶  bb-mcp  ─── nREPL:7910 ───▶  emacs-mcp  ───▶  Emacs
+Claude Code  ─── MCP/stdio ───▶  bb-mcp  ─── nREPL:7910 ───▶  hive-mcp  ───▶  Emacs
 ```
 
 - **Native tools** (bash, grep, files) run directly in Babashka
-- **Emacs tools** delegate to emacs-mcp via nREPL
-- Multiple Claude instances share one JVM (emacs-mcp)
+- **Emacs tools** delegate to hive-mcp via nREPL
+- Multiple Claude instances share one JVM (hive-mcp)
 
 ## Current Focus Areas
 
 1. **Tool Domains** - 89 tools organized by DDD bounded contexts:
    - Buffer, Magit, Memory, Swarm, Kanban, CIDER, Projectile, Org, Prompt, Context
 
-2. **Dynamic Loading** - Fetch tool specs from emacs-mcp at runtime
+2. **Dynamic Loading** - Fetch tool specs from hive-mcp at runtime
 
 3. **Swarm Orchestration** - Spawn and manage Claude agent swarms from Emacs
 
@@ -29,7 +29,7 @@ Claude Code  ─── MCP/stdio ───▶  bb-mcp  ─── nREPL:7910 ─�
 bb-mcp/
 ├── core.clj          # MCP server entry point
 ├── protocol.clj      # JSON-RPC handling
-├── nrepl_spawn.clj   # Auto-spawn emacs-mcp
+├── nrepl_spawn.clj   # Auto-spawn hive-mcp
 └── tools/
     ├── nrepl.clj     # Bencode nREPL client
     └── emacs/        # Domain-specific tool modules
@@ -50,6 +50,6 @@ bb test                   # Run tests
 ## Key Design Decisions
 
 - **Babashka over JVM**: Fast startup, low memory for per-conversation instances
-- **Shared nREPL**: One JVM (emacs-mcp) serves many bb-mcp instances
+- **Shared nREPL**: One JVM (hive-mcp) serves many bb-mcp instances
 - **Byte-based bencode**: Proper UTF-8 handling in nREPL protocol
 - **DDD tool organization**: Each domain module owns its tools completely

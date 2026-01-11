@@ -6,6 +6,7 @@
 # Environment variables:
 #   BB_MCP_PROJECT_DIR - Project directory (default: $1 or cwd)
 #   BB_MCP_NREPL_PORT  - nREPL port (default: from .nrepl-port or $2)
+#   HIVE_MCP_DIR      - Path to hive-mcp/hive-mcp (required for auto-spawn)
 
 set -euo pipefail
 

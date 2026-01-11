@@ -7,7 +7,7 @@ set -euo pipefail
 # Define projects and their nREPL ports
 declare -A PROJECTS=(
     ["clojure-elisp"]="/home/lages/PP/clojure-elisp:7920:clojure -M:dev"
-    ["emacs-mcp"]="/home/lages/dotfiles/gitthings/emacs-mcp:7910:clojure -M:dev"
+    ["hive-mcp"]="/home/lages/dotfiles/gitthings/hive-mcp:7910:clojure -M:dev"
     # Add more projects as needed
 )
 

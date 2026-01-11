@@ -1,15 +1,15 @@
 (ns bb-mcp.tools.dynamic-test
-  "Tests for dynamic tool loading from emacs-mcp."
+  "Tests for dynamic tool loading from hive-mcp."
   (:require [clojure.test :refer :all]
             [bb-mcp.tools.emacs :as emacs]
             [bb-mcp.tools.emacs.dynamic :as dynamic]))
 
 ;; =============================================================================
-;; Unit Tests - Transform Functions (no emacs-mcp required)
+;; Unit Tests - Transform Functions (no hive-mcp required)
 ;; =============================================================================
 
 (deftest transform-tool-test
-  (testing "Transform emacs-mcp spec to bb-mcp format"
+  (testing "Transform hive-mcp spec to bb-mcp format"
     (let [emacs-spec {:name "test_tool"
                       :description "A test tool"
                       :schema {:type "object"
@@ -38,7 +38,7 @@
           "Missing schema should get default empty schema"))))
 
 ;; =============================================================================
-;; Unit Tests - Cache Functions (no emacs-mcp required)
+;; Unit Tests - Cache Functions (no hive-mcp required)
 ;; =============================================================================
 
 (deftest cache-lifecycle-test
@@ -53,7 +53,7 @@
     (is (nil? (dynamic/get-tools)) "Cache should still be nil after clear")))
 
 ;; =============================================================================
-;; Unit Tests - Forwarding Handler (no emacs-mcp required)
+;; Unit Tests - Forwarding Handler (no hive-mcp required)
 ;; =============================================================================
 
 (deftest make-forwarding-handler-test
@@ -62,11 +62,11 @@
       (is (fn? handler) "Should return a function"))))
 
 ;; =============================================================================
-;; Integration Tests - Dynamic Loading (requires emacs-mcp on port 7910)
+;; Integration Tests - Dynamic Loading (requires hive-mcp on port 7910)
 ;; =============================================================================
 
-(defn emacs-mcp-available?
-  "Check if emacs-mcp nREPL is available."
+(defn hive-mcp-available?
+  "Check if hive-mcp nREPL is available."
   []
   (try
     (dynamic/clear-cache!)
@@ -75,11 +75,11 @@
     (catch Exception _ false)))
 
 (deftest dynamic-loading-integration-test
-  (when (emacs-mcp-available?)
-    (testing "Dynamic tool loading from emacs-mcp"
+  (when (hive-mcp-available?)
+    (testing "Dynamic tool loading from hive-mcp"
       (let [tools (emacs/get-tools)]
         (is (> (count tools) 50)
-            "Should load many tools from emacs-mcp")
+            "Should load many tools from hive-mcp")
 
         (testing "All tools have required structure"
           (doseq [tool tools]

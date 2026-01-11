@@ -17,7 +17,7 @@ Lightweight MCP (Model Context Protocol) server in Babashka that bridges Claude 
 
 ### Key Metrics
 
-| Metric | JVM emacs-mcp | bb-mcp |
+| Metric | JVM hive-mcp | bb-mcp |
 |--------|---------------|--------|
 | Startup | ~2-3s | **~5ms** |
 | Memory | ~500MB | **~50MB** |
@@ -27,7 +27,7 @@ Lightweight MCP (Model Context Protocol) server in Babashka that bridges Claude 
 
 When running swarm agents (multiple Claudes working in parallel), each agent needs an MCP connection to Emacs. Without bb-mcp, you'd need separate JVM processes. With bb-mcp:
 
-- **1 emacs-mcp** (JVM) handles Emacs integration
+- **1 hive-mcp** (JVM) handles Emacs integration
 - **N bb-mcp** instances (Babashka) multiplex to it
 - All agents share tools, memory, kanban, git via the single JVM
 
@@ -39,7 +39,7 @@ When running swarm agents (multiple Claudes working in parallel), each agent nee
   Claude 1 ───────▶ │   bb-mcp     │──┐
                     └──────────────┘  │
                     ┌──────────────┐  │     ┌─────────────────┐
-  Claude 2 ───────▶ │   bb-mcp     │──┼────▶│   emacs-mcp     │
+  Claude 2 ───────▶ │   bb-mcp     │──┼────▶│   hive-mcp     │
                     └──────────────┘  │     │   (nREPL:7910)  │
                     ┌──────────────┐  │     └────────┬────────┘
   Claude 3 ───────▶ │   bb-mcp     │──┘              │
@@ -52,14 +52,18 @@ When running swarm agents (multiple Claudes working in parallel), each agent nee
 **Data Flow:**
 1. Claude Code connects to bb-mcp via MCP protocol (stdio)
 2. bb-mcp handles native tools directly (bash, grep, file ops)
-3. Emacs-related tools delegate to emacs-mcp via nREPL on port 7910
-4. emacs-mcp executes elisp in Emacs via emacsclient
+3. Emacs-related tools delegate to hive-mcp via nREPL on port 7910
+4. hive-mcp executes elisp in Emacs via emacsclient
 
 ## Prerequisites
 
 - [Babashka](https://babashka.org/) v1.3+
 - [ripgrep](https://github.com/BurntSushi/ripgrep) (for grep tool)
-- [emacs-mcp](https://github.com/BuddhiLW/emacs-mcp) running with nREPL on port 7910
+
+- [hive-mcp](https://github.com/BuddhiLW/hive-mcp) running with nREPL on port 7910
+
+- [hive-mcp](https://github.com/your-user/hive-mcp) running with nREPL on port 7910
+
 
 ## Installation
 
@@ -81,7 +85,7 @@ bb-mcp finds the nREPL port in this order:
 1. **Explicit parameter** - `port` in tool call
 2. **Environment variable** - `BB_MCP_NREPL_PORT`
 3. **.nrepl-port file** - In `BB_MCP_PROJECT_DIR` or current directory
-4. **Default** - Port 7910 (emacs-mcp)
+4. **Default** - Port 7910 (hive-mcp)
 
 ### Environment Variables
 
@@ -89,11 +93,11 @@ bb-mcp finds the nREPL port in this order:
 |----------|-------------|---------|
 | `BB_MCP_NREPL_PORT` | nREPL port to connect to | 7910 |
 | `BB_MCP_PROJECT_DIR` | Directory for .nrepl-port lookup | Current dir |
-| `EMACS_MCP_DIR` | emacs-mcp directory for auto-spawn | ~/dotfiles/gitthings/emacs-mcp |
+| `HIVE_MCP_DIR` | hive-mcp directory for auto-spawn | ~/dotfiles/gitthings/hive-mcp |
 
 ## Tools
 
-bb-mcp provides **114 tools** (6 native + 108 from emacs-mcp).
+bb-mcp provides **114 tools** (6 native + 108 from hive-mcp).
 
 ### Native Tools (6)
 
@@ -110,7 +114,7 @@ Fast tools that run directly in Babashka without JVM:
 
 ### Emacs Tools (108 dynamic)
 
-Tools loaded dynamically from emacs-mcp at startup:
+Tools loaded dynamically from hive-mcp at startup:
 
 | Domain | Tools | Description |
 |--------|-------|-------------|
@@ -129,9 +133,9 @@ Tools loaded dynamically from emacs-mcp at startup:
 
 ### Dynamic Tool Loading
 
-At startup, bb-mcp queries emacs-mcp via nREPL for all available tools and creates forwarding handlers automatically. This ensures bb-mcp always has **automatic parity** with emacs-mcp - no manual synchronization needed.
+At startup, bb-mcp queries hive-mcp via nREPL for all available tools and creates forwarding handlers automatically. This ensures bb-mcp always has **automatic parity** with hive-mcp - no manual synchronization needed.
 
-When emacs-mcp adds new tools, bb-mcp picks them up automatically on next startup.
+When hive-mcp adds new tools, bb-mcp picks them up automatically on next startup.
 
 ## Usage
 
@@ -147,17 +151,17 @@ bb -m bb-mcp.core
 
 ### Connection Management
 
-bb-mcp uses **state-based detection** to manage the emacs-mcp connection:
+bb-mcp uses **state-based detection** to manage the hive-mcp connection:
 
 | State | Condition | Action |
 |-------|-----------|--------|
 | `:ready` | Port listening | Connect immediately (0 latency) |
 | `:starting` | Lock file or process exists | Wait with exponential backoff |
-| `:not-running` | No process found | Spawn emacs-mcp and wait |
+| `:not-running` | No process found | Spawn hive-mcp and wait |
 
 This eliminates race conditions and ensures reliable startup even when multiple bb-mcp instances start simultaneously.
 
-Logs go to `~/.config/emacs-mcp/server.log`.
+Logs go to `~/.config/hive-mcp/server.log`.
 
 ## Project Structure
 
@@ -167,7 +171,7 @@ bb-mcp/
 ├── src/bb_mcp/
 │   ├── core.clj              # Main entry, MCP message loop
 │   ├── protocol.clj          # JSON-RPC protocol handling
-│   ├── nrepl_spawn.clj       # Auto-spawn emacs-mcp nREPL
+│   ├── nrepl_spawn.clj       # Auto-spawn hive-mcp nREPL
 │   ├── test_runner.clj       # Test runner
 │   └── tools/
 │       ├── bash.clj          # Native: shell execution
@@ -176,11 +180,11 @@ bb-mcp/
 │       ├── nrepl.clj         # nREPL client (bencode)
 │       ├── emacs.clj         # Emacs tools facade
 │       └── emacs/
-│           └── dynamic.clj   # Dynamic tool loading from emacs-mcp
+│           └── dynamic.clj   # Dynamic tool loading from hive-mcp
 └── test/                     # Tests
 ```
 
-The `emacs/` directory is minimal - all Emacs tools are loaded dynamically from emacs-mcp at runtime, eliminating code duplication.
+The `emacs/` directory is minimal - all Emacs tools are loaded dynamically from hive-mcp at runtime, eliminating code duplication.
 
 ## Development
 
@@ -198,7 +202,7 @@ bb nrepl
 1. Add to appropriate file in `src/bb_mcp/tools/` (bash, file, grep)
 2. Register in `src/bb_mcp/core.clj` native-tools vector
 
-**Emacs tools**: Add to emacs-mcp instead - bb-mcp picks them up automatically via dynamic loading.
+**Emacs tools**: Add to hive-mcp instead - bb-mcp picks them up automatically via dynamic loading.
 
 ### nREPL Implementation
 
